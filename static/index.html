@@ -392,7 +392,7 @@
   <div class="panel-title">Game Info</div>
   <div class="field-row">
     <div class="field">
-      <label>PLAYERS STILL IN HAND</label>
+      <label>PLAYERS STILL IN HAND (incl. you)</label>
       <input type="number" id="num-players" min="2" max="9" value="6" />
     </div>
     <div class="field" style="flex:1;min-width:180px;">
@@ -543,9 +543,10 @@
   }
 
   function onSlotClick(id) {
-    // Clicking a filled slot clears it; clicking any slot makes it active
-    if (cardState[id] && activeSlot !== id) {
-      // Just activate without clearing — let user pick a replacement
+    if (activeSlot === id && cardState[id]) {
+      // Second tap on an already-active filled slot — clear it
+      cardState[id] = null;
+      scheduleCalculate();
     }
     activeSlot = id;
     renderAllSlots();
