@@ -393,11 +393,11 @@
   <div class="field-row">
     <div class="field">
       <label>PLAYERS STILL IN HAND incl. you</label>
-      <input type="number" id="num-players" min="2" max="9" value="6" />
+      <input type="number" id="num-players" min="2" max="9" value="0" />
     </div>
     <div class="field">
       <label>TOTAL POT incl. bets ($)</label>
-      <input type="number" id="pot-size" min="0" value="100" />
+      <input type="number" id="pot-size" min="0" value="0" />
     </div>
     <div class="field">
       <label>AMOUNT TO CALL ($)</label>
@@ -819,7 +819,9 @@
     errDiv.style.display = 'none';
 
     const hole = [getCard('card1'), getCard('card2')];
-    if (hole.some(c => !c)) return; // silently skip if hole cards not set
+    if (hole.some(c => !c)) return;
+    const numPlayers = parseInt(document.getElementById('num-players').value);
+    if (!numPlayers || numPlayers < 2) return;
 
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>Calculating…';
