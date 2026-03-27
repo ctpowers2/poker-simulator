@@ -161,16 +161,17 @@
     input[type="number"]:focus { border-color: #f5c842; }
 
     /* ── Pot builder buttons ─────────────────────────────── */
-    .pot-btns { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .pot-btns { display: flex; flex-wrap: nowrap; gap: 3px; margin-top: 6px; overflow-x: auto; padding-bottom: 2px; }
     .pot-btn {
       background: #0d1b2a; border: 1px solid #2a3f55; color: #aabbcc;
-      border-radius: 5px; padding: 0.2rem 0.45rem; font-size: 0.72rem;
-      font-weight: 600; cursor: pointer; transition: all 0.1s;
+      border-radius: 5px; padding: 0.15rem 0.3rem; font-size: 0.68rem;
+      font-weight: 600; cursor: pointer; transition: all 0.1s; flex-shrink: 0; white-space: nowrap;
     }
     .pot-btn:hover { border-color: #f5c842; color: #f5c842; }
     .pot-btn:active { transform: scale(0.93); }
     .pot-btn-clear { color: #e05555; border-color: #3a2020; }
     .pot-btn-clear:hover { border-color: #e05555; color: #e05555; }
+    .pot-target-label { font-size: 0.68rem; font-weight: 700; color: #f5c842; letter-spacing: 0.05em; align-self: center; }
 
     /* ── Submit ──────────────────────────────────────────── */
     button#submit {
@@ -398,8 +399,9 @@
       <label>TOTAL POT incl. bets ($)</label>
       <input type="number" id="pot-size" min="0" value="100" />
       <div class="pot-btns">
+        <span class="pot-target-label" id="pot-target-label">→ Pot</span>
+        <button class="pot-btn" data-add="0.5">+0.5</button>
         <button class="pot-btn" data-add="1">+1</button>
-        <button class="pot-btn" data-add="2">+2</button>
         <button class="pot-btn" data-add="5">+5</button>
         <button class="pot-btn" data-add="10">+10</button>
         <button class="pot-btn" data-add="25">+25</button>
@@ -606,18 +608,40 @@
       }
       updatePickerHint();
       updatePickerUsed();
+      scheduleCalculate();
     });
   });
 
   // ── Pot builder ───────────────────────────────────────────────────────────
+  let potBtnTarget = 'pot-size'; // tracks which field the buttons apply to
+
+  function setPotTarget(id) {
+    potBtnTarget = id;
+    const label = document.getElementById('pot-target-label');
+    const isPot = id === 'pot-size';
+    label.textContent = isPot ? '→ Pot' : '→ Call';
+    label.style.color = isPot ? '#f5c842' : '#66ccff';
+    document.getElementById('pot-size').style.borderColor   = isPot ? '#f5c842' : '#2a3f55';
+    document.getElementById('call-amount').style.borderColor = isPot ? '#2a3f55' : '#66ccff';
+  }
+
+  document.getElementById('pot-size').addEventListener('focus',   () => setPotTarget('pot-size'));
+  document.getElementById('call-amount').addEventListener('focus', () => setPotTarget('call-amount'));
+  // Also switch on click so tapping on mobile (which may not fire focus) works
+  document.getElementById('pot-size').addEventListener('click',   () => setPotTarget('pot-size'));
+  document.getElementById('call-amount').addEventListener('click', () => setPotTarget('call-amount'));
+
+  setPotTarget('pot-size'); // default
+
   document.querySelectorAll('.pot-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const input = document.getElementById('pot-size');
+      const input = document.getElementById(potBtnTarget);
       if (btn.dataset.set !== undefined) {
         input.value = btn.dataset.set;
       } else {
         input.value = (parseFloat(input.value) || 0) + parseFloat(btn.dataset.add);
       }
+      scheduleCalculate();
     });
   });
 
@@ -690,6 +714,7 @@
     renderAllSlots();
     updatePickerHint();
     updatePickerUsed();
+    scheduleCalculate();
   }
 
   function getVisibleSlotIds() {
@@ -784,19 +809,16 @@
   }
 
   // ── Submit ───────────────────────────────────────────────────────────────
-  document.getElementById('submit').addEventListener('click', async () => {
-    const btn      = document.getElementById('submit');
-    const errDiv   = document.getElementById('error');
-    const results  = document.getElementById('results');
+  // ── Core calculate function ───────────────────────────────────────────────
+  async function calculate() {
+    const btn     = document.getElementById('submit');
+    const errDiv  = document.getElementById('error');
+    const results = document.getElementById('results');
 
     errDiv.style.display = 'none';
 
     const hole = [getCard('card1'), getCard('card2')];
-    if (hole.some(c => !c)) {
-      errDiv.textContent = 'Please select both hole cards.';
-      errDiv.style.display = 'block';
-      return;
-    }
+    if (hole.some(c => !c)) return; // silently skip if hole cards not set
 
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>Calculating…';
@@ -836,7 +858,6 @@
       document.getElementById('stat-equity').textContent = sim.equity + '%';
       document.getElementById('stat-lose').textContent   = sim.loss_pct + '%';
 
-      // Bold action block
       const key = actionKey(rec.action);
       const block = document.getElementById('action-block');
       block.className = `action-block a-${key}`;
@@ -845,7 +866,6 @@
         rec.bet_size > 0 ? `Bet $${rec.bet_size.toFixed(0)} · ${rec.bet_pct}% of pot` : '';
       document.getElementById('rec-reason').textContent = rec.reason;
 
-      // Detail cells
       document.getElementById('rec-bet').textContent =
         rec.bet_size > 0 ? `$${rec.bet_size.toFixed(2)} (${rec.bet_pct}%)` : '—';
       document.getElementById('rec-ev').textContent =
@@ -855,7 +875,6 @@
       document.getElementById('rec-potodds').textContent =
         payload.call_amount > 0 ? rec.pot_odds_required + '%' : '—';
 
-      // Save to hand history
       addToHistory({
         hole: payload.hole_cards,
         community: payload.community_cards,
@@ -866,7 +885,6 @@
         betSize: rec.bet_size,
       });
 
-      // Hand breakdown chart
       const breakdown = sim.win_breakdown || {};
       const handOrder = [
         'Straight Flush','Four of a Kind','Full House','Flush',
@@ -874,7 +892,6 @@
       ];
       const breakdownEl = document.getElementById('hand-breakdown');
       breakdownEl.innerHTML = '';
-      // Bar colour shifts from green (strong) to blue (weak)
       const barColors = {
         'Straight Flush':'#f5c842','Four of a Kind':'#f5c842','Full House':'#66ccff',
         'Flush':'#66ccff','Straight':'#66ccff','Three of a Kind':'#4caf82',
@@ -892,7 +909,6 @@
           <div class="breakdown-pct">${pct}%</div>`;
         breakdownEl.appendChild(row);
       });
-      // Animate bars after paint
       requestAnimationFrame(() => {
         breakdownEl.querySelectorAll('.breakdown-fill').forEach(el => {
           el.style.width = el.dataset.pct + '%';
@@ -900,7 +916,6 @@
       });
 
       results.style.display = 'block';
-      results.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (err) {
       errDiv.textContent = err.message;
       errDiv.style.display = 'block';
@@ -908,6 +923,21 @@
       btn.disabled = false;
       btn.innerHTML = 'Calculate EV';
     }
+  }
+
+  // Debounced auto-calculate — waits 600ms after last change
+  let calcTimer = null;
+  function scheduleCalculate() {
+    clearTimeout(calcTimer);
+    calcTimer = setTimeout(calculate, 600);
+  }
+
+  // Trigger on manual button press
+  document.getElementById('submit').addEventListener('click', calculate);
+
+  // Trigger on numeric input changes
+  ['num-players','pot-size','call-amount'].forEach(id => {
+    document.getElementById(id).addEventListener('input', scheduleCalculate);
   });
 </script>
 </body>
