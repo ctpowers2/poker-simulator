@@ -223,6 +223,115 @@
 
     #clear-all:hover { border-color: #e05555; color: #e05555; }
 
+    /* ── Bold action block ───────────────────────────────── */
+    .action-block {
+      border-radius: 12px;
+      padding: 1.6rem 1.2rem;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .action-block-text {
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .action-block-sub {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.85);
+      margin-top: 0.5rem;
+      font-weight: 600;
+    }
+    .action-block-reason {
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.55);
+      margin-top: 0.4rem;
+      line-height: 1.5;
+    }
+    .action-block.a-raise { background: linear-gradient(135deg,#1a5e35,#1e6b3d); border: 2px solid #4caf82; }
+    .action-block.a-bet   { background: linear-gradient(135deg,#1a3a6b,#1e3f7a); border: 2px solid #66ccff; }
+    .action-block.a-call  { background: linear-gradient(135deg,#5a4a10,#6b5815); border: 2px solid #f5c842; }
+    .action-block.a-check { background: linear-gradient(135deg,#253545,#2a3f55); border: 2px solid #8899aa; }
+    .action-block.a-fold  { background: linear-gradient(135deg,#5a1515,#6b1a1a); border: 2px solid #e05555; }
+
+    /* Bet/EV details row below action block */
+    .action-details {
+      display: flex;
+      gap: 0;
+      margin-bottom: 1.2rem;
+      border: 1px solid #2a3f55;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .action-detail-cell {
+      flex: 1;
+      text-align: center;
+      padding: 0.7rem 0.4rem;
+      border-right: 1px solid #2a3f55;
+    }
+    .action-detail-cell:last-child { border-right: none; }
+    .adc-label { font-size: 0.65rem; color: #8899aa; letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 0.2rem; }
+    .adc-value { font-size: 0.95rem; font-weight: 700; color: #e8eaed; }
+
+    /* ── Hand history ────────────────────────────────────── */
+    #hand-history { display: none; width: 100%; max-width: 720px; margin-bottom: 1.2rem; }
+    .history-panel {
+      background: #1a2a3a; border: 1px solid #2a3f55; border-radius: 12px; padding: 1.2rem 1.5rem;
+    }
+    .history-entry {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #1e3348;
+    }
+    .history-entry:last-child { border-bottom: none; padding-bottom: 0; }
+    .history-entry:first-child { padding-top: 0; }
+    .history-meta { font-size: 0.68rem; color: #8899aa; margin-bottom: 0.4rem; letter-spacing: 0.03em; }
+    .history-cards { display: flex; gap: 4px; align-items: center; margin-bottom: 0.35rem; flex-wrap: wrap; }
+    .history-sep { color: #3a5a7a; font-size: 0.9rem; margin: 0 2px; }
+    .mini-card {
+      width: 26px; height: 36px; background: #fff; border-radius: 3px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-size: 0.6rem; font-weight: 800; line-height: 1.15; flex-shrink: 0;
+    }
+    .history-stats { display: flex; gap: 0.7rem; flex-wrap: wrap; align-items: center; }
+    .history-stat { font-size: 0.75rem; color: #8899aa; }
+    .history-stat strong { color: #e8eaed; }
+    .h-action {
+      font-size: 0.75rem; font-weight: 800; padding: 0.15rem 0.5rem;
+      border-radius: 4px; letter-spacing: 0.04em;
+    }
+    .h-raise,.h-bet { background:#1a3a25; color:#4caf82; }
+    .h-call         { background:#4a3a0a; color:#f5c842; }
+    .h-check        { background:#2a3a4a; color:#8899aa; }
+    .h-fold         { background:#3a1515; color:#e05555; }
+
+    /* ── Mobile ──────────────────────────────────────────── */
+    @media (max-width: 520px) {
+      body { padding: 1rem 0.5rem 4rem; }
+      h1 { font-size: 1.4rem; }
+      .subtitle { margin-bottom: 1.2rem; }
+      .panel { padding: 1rem; }
+      .pick-card { width: 28px; height: 40px; }
+      .pick-card .pick-rank { font-size: 0.65rem; }
+      .pick-card .pick-suit { font-size: 0.7rem; }
+      .picker-suit-label { font-size: 0.9rem; width: 16px; }
+      .picker-suit-row { gap: 3px; }
+      .picker-cards-row { gap: 2px; }
+      .card-slot { width: 46px; height: 64px; }
+      .slot-rank { font-size: 0.95rem; }
+      .slot-suit { font-size: 1.05rem; }
+      .action-block-text { font-size: 2.2rem; }
+      .action-block-sub  { font-size: 0.9rem; }
+      .field-row { gap: 0.8rem; }
+      input[type="number"] { width: 90px; font-size: 0.9rem; }
+      .stat-value { font-size: 1.25rem; }
+      .action-detail-cell { padding: 0.5rem 0.2rem; }
+      .adc-value { font-size: 0.85rem; }
+      .result-panel { padding: 1rem; }
+      .breakdown-name { width: 105px; font-size: 0.72rem; }
+    }
+
     .spinner {
       display: inline-block; width: 18px; height: 18px; border: 3px solid #2a3f55;
       border-top-color: #f5c842; border-radius: 50%; animation: spin 0.6s linear infinite;
@@ -307,14 +416,26 @@
       <div class="stat-box tie"><div class="stat-value" id="stat-equity">—</div><div class="stat-label">EQUITY %</div></div>
       <div class="stat-box lose"><div class="stat-value" id="stat-lose">—</div><div class="stat-label">LOSE %</div></div>
     </div>
-    <div class="rec-panel">
-      <div class="rec-action" id="rec-action">—</div>
-      <div class="rec-details">
-        <div class="rec-detail">Bet size: <strong id="rec-bet">—</strong></div>
-        <div class="rec-detail">Call EV: <strong id="rec-ev">—</strong></div>
-        <div class="rec-detail">Pot odds needed: <strong id="rec-potodds">—</strong></div>
+    <!-- Bold action block -->
+    <div class="action-block a-fold" id="action-block">
+      <div class="action-block-text" id="rec-action">—</div>
+      <div class="action-block-sub"  id="rec-bet-sub"></div>
+      <div class="action-block-reason" id="rec-reason"></div>
+    </div>
+    <!-- Detail cells -->
+    <div class="action-details">
+      <div class="action-detail-cell">
+        <div class="adc-label">Bet Size</div>
+        <div class="adc-value" id="rec-bet">—</div>
       </div>
-      <div class="rec-reason" id="rec-reason">—</div>
+      <div class="action-detail-cell">
+        <div class="adc-label">Call EV</div>
+        <div class="adc-value" id="rec-ev">—</div>
+      </div>
+      <div class="action-detail-cell">
+        <div class="adc-label">Pot Odds Req.</div>
+        <div class="adc-value" id="rec-potodds">—</div>
+      </div>
     </div>
 
     <!-- Winning hand breakdown -->
@@ -325,6 +446,14 @@
       <div style="font-size:0.75rem;color:#8899aa;margin-bottom:0.7rem;">% of winning scenarios by hand type</div>
       <div id="hand-breakdown"></div>
     </div>
+  </div>
+</div>
+
+<!-- Hand History -->
+<div id="hand-history">
+  <div class="history-panel">
+    <div class="panel-title">Recent Hands</div>
+    <div id="history-list"></div>
   </div>
 </div>
 
@@ -552,14 +681,60 @@
       .filter(Boolean);
   }
 
-  // ── Action class for colouring ───────────────────────────────────────────
-  function actionClass(action) {
+  // ── Action helpers ────────────────────────────────────────────────────────
+  function actionKey(action) {
     const a = action.toLowerCase();
-    if (a.includes('raise')) return 'action-raise';
-    if (a.includes('bet'))   return 'action-bet';
-    if (a.includes('call'))  return 'action-call';
-    if (a.includes('check')) return 'action-check';
-    return 'action-fold';
+    if (a.includes('raise')) return 'raise';
+    if (a.includes('bet'))   return 'bet';
+    if (a.includes('call'))  return 'call';
+    if (a.includes('check')) return 'check';
+    return 'fold';
+  }
+
+  // ── Hand history ──────────────────────────────────────────────────────────
+  const handHistory = [];
+
+  function miniCardHTML(card) {
+    if (!card) return '';
+    const rank = card.slice(0, -1);
+    const suit = card.slice(-1);
+    const cls  = SUIT_CLS[suit];
+    return `<div class="mini-card"><span class="${cls}">${RANK_DISPLAY(rank)}</span><span class="${cls}">${SUIT_SYM[suit]}</span></div>`;
+  }
+
+  function addToHistory(entry) {
+    handHistory.unshift(entry);
+    if (handHistory.length > 5) handHistory.pop();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    if (handHistory.length === 0) return;
+    document.getElementById('hand-history').style.display = 'block';
+    const list = document.getElementById('history-list');
+    list.innerHTML = '';
+    handHistory.forEach((h, i) => {
+      const key = actionKey(h.action);
+      const hCls = (key === 'raise' || key === 'bet') ? 'h-raise' : `h-${key}`;
+      const communityHTML = h.community.length
+        ? `<span class="history-sep">→</span>${h.community.map(miniCardHTML).join('')}`
+        : '';
+      const betTxt = h.betSize > 0 ? ` · $${h.betSize.toFixed(0)} bet` : '';
+      const div = document.createElement('div');
+      div.className = 'history-entry';
+      div.innerHTML = `
+        <div class="history-meta">Hand #${handHistory.length - i} · ${h.street}</div>
+        <div class="history-cards">
+          ${h.hole.map(miniCardHTML).join('')}${communityHTML}
+        </div>
+        <div class="history-stats">
+          <span class="history-stat">Win <strong>${h.winPct}%</strong></span>
+          <span class="history-stat">Equity <strong>${h.equity}%</strong></span>
+          <span class="h-action ${hCls}">${h.action}</span>
+          <span class="history-stat">${betTxt}</span>
+        </div>`;
+      list.appendChild(div);
+    });
   }
 
   // ── Submit ───────────────────────────────────────────────────────────────
@@ -615,19 +790,35 @@
       document.getElementById('stat-equity').textContent = sim.equity + '%';
       document.getElementById('stat-lose').textContent   = sim.loss_pct + '%';
 
-      const actionEl = document.getElementById('rec-action');
-      actionEl.textContent = rec.action;
-      actionEl.className   = 'rec-action ' + actionClass(rec.action);
+      // Bold action block
+      const key = actionKey(rec.action);
+      const block = document.getElementById('action-block');
+      block.className = `action-block a-${key}`;
+      document.getElementById('rec-action').textContent = rec.action;
+      document.getElementById('rec-bet-sub').textContent =
+        rec.bet_size > 0 ? `Bet $${rec.bet_size.toFixed(0)} · ${rec.bet_pct}% of pot` : '';
+      document.getElementById('rec-reason').textContent = rec.reason;
 
+      // Detail cells
       document.getElementById('rec-bet').textContent =
-        rec.bet_size > 0 ? `$${rec.bet_size.toFixed(2)} (${rec.bet_pct}% of pot)` : '—';
+        rec.bet_size > 0 ? `$${rec.bet_size.toFixed(2)} (${rec.bet_pct}%)` : '—';
       document.getElementById('rec-ev').textContent =
         payload.call_amount > 0
           ? (rec.ev_call >= 0 ? '+' : '') + `$${rec.ev_call.toFixed(2)}`
           : '—';
       document.getElementById('rec-potodds').textContent =
         payload.call_amount > 0 ? rec.pot_odds_required + '%' : '—';
-      document.getElementById('rec-reason').textContent = rec.reason;
+
+      // Save to hand history
+      addToHistory({
+        hole: payload.hole_cards,
+        community: payload.community_cards,
+        street: data.street,
+        winPct: sim.win_pct,
+        equity: sim.equity,
+        action: rec.action,
+        betSize: rec.bet_size,
+      });
 
       // Hand breakdown chart
       const breakdown = sim.win_breakdown || {};
