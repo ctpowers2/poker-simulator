@@ -161,7 +161,7 @@
     input[type="number"]:focus { border-color: #f5c842; }
 
     /* ── Pot builder buttons ─────────────────────────────── */
-    .pot-btns { display: flex; flex-wrap: nowrap; gap: 3px; margin-top: 6px; overflow-x: auto; padding-bottom: 2px; }
+    .pot-btns { display: flex; flex-wrap: wrap; gap: 4px; }
     .pot-btn {
       background: #0d1b2a; border: 1px solid #2a3f55; color: #aabbcc;
       border-radius: 5px; padding: 0.15rem 0.3rem; font-size: 0.68rem;
@@ -395,25 +395,25 @@
       <label>PLAYERS STILL IN HAND incl. you</label>
       <input type="number" id="num-players" min="2" max="9" value="6" />
     </div>
-    <div class="field" style="flex:1;min-width:180px;">
+    <div class="field">
       <label>TOTAL POT incl. bets ($)</label>
       <input type="number" id="pot-size" min="0" value="100" />
-      <div class="pot-btns">
-        <span class="pot-target-label" id="pot-target-label">→ Pot</span>
-        <button class="pot-btn" data-add="0.5">+0.5</button>
-        <button class="pot-btn" data-add="1">+1</button>
-        <button class="pot-btn" data-add="5">+5</button>
-        <button class="pot-btn" data-add="10">+10</button>
-        <button class="pot-btn" data-add="25">+25</button>
-        <button class="pot-btn" data-add="50">+50</button>
-        <button class="pot-btn" data-add="100">+100</button>
-        <button class="pot-btn pot-btn-clear" data-set="0">C</button>
-      </div>
     </div>
     <div class="field">
       <label>AMOUNT TO CALL ($)</label>
       <input type="number" id="call-amount" min="0" value="0" />
     </div>
+  </div>
+  <div class="pot-btns" style="margin-top:0.8rem;">
+    <span class="pot-target-label" id="pot-target-label">→ Pot</span>
+    <button class="pot-btn" data-add="0.5">+0.5</button>
+    <button class="pot-btn" data-add="1">+1</button>
+    <button class="pot-btn" data-add="5">+5</button>
+    <button class="pot-btn" data-add="10">+10</button>
+    <button class="pot-btn" data-add="25">+25</button>
+    <button class="pot-btn" data-add="50">+50</button>
+    <button class="pot-btn" data-add="100">+100</button>
+    <button class="pot-btn pot-btn-clear" data-set="0">C</button>
   </div>
 </div>
 
