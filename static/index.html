@@ -160,6 +160,18 @@
     }
     input[type="number"]:focus { border-color: #f5c842; }
 
+    /* ── Pot builder buttons ─────────────────────────────── */
+    .pot-btns { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .pot-btn {
+      background: #0d1b2a; border: 1px solid #2a3f55; color: #aabbcc;
+      border-radius: 5px; padding: 0.2rem 0.45rem; font-size: 0.72rem;
+      font-weight: 600; cursor: pointer; transition: all 0.1s;
+    }
+    .pot-btn:hover { border-color: #f5c842; color: #f5c842; }
+    .pot-btn:active { transform: scale(0.93); }
+    .pot-btn-clear { color: #e05555; border-color: #3a2020; }
+    .pot-btn-clear:hover { border-color: #e05555; color: #e05555; }
+
     /* ── Submit ──────────────────────────────────────────── */
     button#submit {
       display: block; width: 100%; max-width: 720px; padding: 0.9rem;
@@ -382,9 +394,19 @@
       <label>PLAYERS STILL IN HAND</label>
       <input type="number" id="num-players" min="2" max="9" value="6" />
     </div>
-    <div class="field">
+    <div class="field" style="flex:1;min-width:180px;">
       <label>TOTAL POT incl. bets ($)</label>
       <input type="number" id="pot-size" min="0" value="100" />
+      <div class="pot-btns">
+        <button class="pot-btn" data-add="1">+1</button>
+        <button class="pot-btn" data-add="2">+2</button>
+        <button class="pot-btn" data-add="5">+5</button>
+        <button class="pot-btn" data-add="10">+10</button>
+        <button class="pot-btn" data-add="25">+25</button>
+        <button class="pot-btn" data-add="50">+50</button>
+        <button class="pot-btn" data-add="100">+100</button>
+        <button class="pot-btn pot-btn-clear" data-set="0">C</button>
+      </div>
     </div>
     <div class="field">
       <label>AMOUNT TO CALL ($)</label>
@@ -571,7 +593,31 @@
       tab.classList.add('active');
       currentStreet = tab.dataset.street;
       updateCommunityVisibility();
+      // Auto-activate first empty community slot so user can tap cards immediately
+      if (currentStreet !== 'preflop') {
+        const visibleCommunity = communityDefs
+          .filter(def => def.streets.includes(currentStreet))
+          .map(def => def.id);
+        const firstEmpty = visibleCommunity.find(id => !cardState[id]);
+        if (firstEmpty) {
+          activeSlot = firstEmpty;
+          renderAllSlots();
+        }
+      }
       updatePickerHint();
+      updatePickerUsed();
+    });
+  });
+
+  // ── Pot builder ───────────────────────────────────────────────────────────
+  document.querySelectorAll('.pot-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById('pot-size');
+      if (btn.dataset.set !== undefined) {
+        input.value = btn.dataset.set;
+      } else {
+        input.value = (parseFloat(input.value) || 0) + parseFloat(btn.dataset.add);
+      }
     });
   });
 
