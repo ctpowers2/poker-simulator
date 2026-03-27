@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Poker EV Calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d1b2a;
+      color: #e8eaed;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+    }
+
+    h1 { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.04em; color: #f5c842; margin-bottom: 0.3rem; }
+    .subtitle { color: #8899aa; font-size: 0.9rem; margin-bottom: 2rem; }
+
+    .panel {
+      background: #1a2a3a;
+      border: 1px solid #2a3f55;
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      width: 100%;
+      max-width: 720px;
+      margin-bottom: 1.2rem;
+    }
+    .panel-title {
+      font-size: 0.75rem; font-weight: 600; letter-spacing: 0.12em;
+      text-transform: uppercase; color: #f5c842; margin-bottom: 1rem;
+    }
+
+    /* ── Card slots ─────────────────────────────────────── */
+    .slots-row {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .slot-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .slot-wrap .slot-label {
+      font-size: 0.65rem;
+      color: #8899aa;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .card-slot {
+      width: 54px;
+      height: 76px;
+      border-radius: 7px;
+      border: 2px dashed #2a4a65;
+      background: #0d1b2a;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      user-select: none;
+      position: relative;
+    }
+    .card-slot:hover { border-color: #4a7a9b; }
+    .card-slot.active {
+      border: 2px solid #f5c842;
+      box-shadow: 0 0 0 3px rgba(245,200,66,0.25);
+    }
+    .card-slot.filled {
+      background: #fff;
+      border: 2px solid #ccc;
+      border-style: solid;
+    }
+    .card-slot.filled:hover { border-color: #f5c842; }
+    .card-slot.filled.active { border-color: #f5c842; box-shadow: 0 0 0 3px rgba(245,200,66,0.35); }
+
+    .slot-empty-icon { font-size: 1.3rem; color: #2a4a65; }
+
+    .slot-rank {
+      font-size: 1.15rem;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+    .slot-suit { font-size: 1.3rem; line-height: 1; }
+    .card-red  { color: #cc2020; }
+    .card-black { color: #111; }
+
+    /* ── Street tabs ─────────────────────────────────────── */
+    .street-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .street-tab {
+      background: #0d1b2a; border: 1px solid #2a3f55; color: #8899aa;
+      border-radius: 8px; padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; letter-spacing: 0.06em; transition: all 0.15s;
+    }
+    .street-tab:hover { border-color: #f5c842; color: #f5c842; }
+    .street-tab.active { background: #f5c842; color: #0d1b2a; border-color: #f5c842; }
+
+    /* ── 52-card picker grid ─────────────────────────────── */
+    .picker-hint {
+      font-size: 0.8rem; color: #8899aa; margin-bottom: 0.8rem; min-height: 1.2em;
+    }
+    .picker-hint span { color: #f5c842; font-weight: 600; }
+
+    .picker-suit-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .picker-suit-label {
+      font-size: 1.1rem;
+      width: 22px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .picker-cards-row {
+      display: flex;
+      gap: 3px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
+
+    .pick-card {
+      width: 40px;
+      height: 56px;
+      background: #fff;
+      border-radius: 5px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.1s, opacity 0.1s, transform 0.1s;
+    }
+    .pick-card:hover:not(.used) { border-color: #f5c842; transform: translateY(-2px); }
+    .pick-card .pick-rank { font-size: 0.85rem; font-weight: 800; line-height: 1; }
+    .pick-card .pick-suit { font-size: 0.95rem; line-height: 1; }
+    .pick-card.used { opacity: 0.2; cursor: not-allowed; pointer-events: none; }
+
+    /* ── Game info fields ────────────────────────────────── */
+    .field-row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.2rem; }
+    .field { display: flex; flex-direction: column; gap: 0.3rem; }
+    .field label { font-size: 0.75rem; color: #8899aa; letter-spacing: 0.05em; }
+    input[type="number"] {
+      background: #0d1b2a; color: #e8eaed; border: 1px solid #2a3f55;
+      border-radius: 6px; padding: 0.4rem 0.6rem; font-size: 0.95rem; width: 110px; outline: none;
+    }
+    input[type="number"]:focus { border-color: #f5c842; }
+
+    /* ── Submit ──────────────────────────────────────────── */
+    button#submit {
+      display: block; width: 100%; max-width: 720px; padding: 0.9rem;
+      background: #f5c842; color: #0d1b2a; border: none; border-radius: 10px;
+      font-size: 1rem; font-weight: 700; letter-spacing: 0.06em; cursor: pointer;
+      transition: background 0.15s, transform 0.1s; margin-bottom: 1.5rem;
+    }
+    button#submit:hover { background: #ffd84d; }
+    button#submit:active { transform: scale(0.98); }
+    button#submit:disabled { background: #3a4a5a; color: #6a7a8a; cursor: default; }
+
+    /* ── Error ───────────────────────────────────────────── */
+    #error {
+      display: none; background: #3a1515; border: 1px solid #cc4444; color: #ff8888;
+      border-radius: 8px; padding: 0.8rem 1rem; width: 100%; max-width: 720px;
+      font-size: 0.9rem; margin-bottom: 1rem;
+    }
+
+    /* ── Results ─────────────────────────────────────────── */
+    #results { display: none; width: 100%; max-width: 720px; }
+    .result-panel {
+      background: #1a2a3a; border: 1px solid #2a3f55; border-radius: 12px;
+      padding: 1.5rem 2rem; margin-bottom: 1rem;
+    }
+    .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; }
+    .street-badge {
+      background: #0d3a5a; border: 1px solid #1a5a8a; color: #66ccff;
+      border-radius: 6px; padding: 0.2rem 0.6rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em;
+    }
+    .hand-label { font-size: 0.85rem; color: #aabbcc; }
+    .equity-bars { margin-bottom: 1.4rem; }
+    .bar-label { display: flex; justify-content: space-between; font-size: 0.78rem; color: #8899aa; margin-bottom: 0.25rem; }
+    .bar-track { background: #0d1b2a; border-radius: 4px; height: 10px; overflow: hidden; margin-bottom: 0.5rem; }
+    .bar-fill-win  { background: #4caf82; height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+    .bar-fill-tie  { background: #f5c842; height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+    .bar-fill-lose { background: #e05555; height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.8rem; margin-bottom: 1.2rem; }
+    .stat-box { background: #0d1b2a; border: 1px solid #2a3f55; border-radius: 8px; padding: 0.8rem; text-align: center; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: #e8eaed; }
+    .stat-label { font-size: 0.7rem; color: #8899aa; letter-spacing: 0.06em; margin-top: 0.2rem; }
+    .stat-box.win .stat-value  { color: #4caf82; }
+    .stat-box.tie .stat-value  { color: #f5c842; }
+    .stat-box.lose .stat-value { color: #e05555; }
+    .rec-panel { background: #0d1b2a; border-radius: 10px; padding: 1.2rem; }
+    .rec-action { font-size: 1.6rem; font-weight: 800; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+    .action-raise { color: #4caf82; }
+    .action-bet   { color: #66ccff; }
+    .action-call  { color: #f5c842; }
+    .action-check { color: #aabbcc; }
+    .action-fold  { color: #e05555; }
+    .rec-details { display: flex; gap: 1.5rem; margin: 0.6rem 0 0.8rem; flex-wrap: wrap; }
+    .rec-detail { font-size: 0.85rem; color: #aabbcc; }
+    .rec-detail strong { color: #e8eaed; }
+    .rec-reason { font-size: 0.85rem; color: #8899aa; line-height: 1.5; }
+    /* Hand breakdown chart */
+    .breakdown-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
+    .breakdown-name { font-size: 0.78rem; color: #aabbcc; width: 130px; flex-shrink: 0; }
+    .breakdown-track { flex: 1; background: #0d1b2a; border-radius: 3px; height: 8px; overflow: hidden; }
+    .breakdown-fill { height: 100%; border-radius: 3px; background: #4caf82; transition: width 0.5s ease; }
+    .breakdown-pct { font-size: 0.78rem; color: #e8eaed; font-weight: 600; width: 38px; text-align: right; flex-shrink: 0; }
+
+    #clear-all:hover { border-color: #e05555; color: #e05555; }
+
+    .spinner {
+      display: inline-block; width: 18px; height: 18px; border: 3px solid #2a3f55;
+      border-top-color: #f5c842; border-radius: 50%; animation: spin 0.6s linear infinite;
+      vertical-align: middle; margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<h1>Poker EV Calculator</h1>
+<p class="subtitle">Tap a card slot, then tap a card to assign it.</p>
+
+<!-- Hole Cards -->
+<div class="panel">
+  <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;">
+    Your Hole Cards
+    <button id="clear-all" style="background:#1e3a50;border:1px solid #2a3f55;color:#8899aa;border-radius:6px;padding:0.25rem 0.7rem;font-size:0.75rem;cursor:pointer;letter-spacing:0.05em;">Remove All</button>
+  </div>
+  <div class="slots-row" id="hole-slots"></div>
+</div>
+
+<!-- Community Cards -->
+<div class="panel">
+  <div class="panel-title">Community Cards</div>
+  <div class="street-tabs">
+    <button class="street-tab active" data-street="preflop">Pre-Flop</button>
+    <button class="street-tab" data-street="flop">Flop</button>
+    <button class="street-tab" data-street="turn">Turn</button>
+    <button class="street-tab" data-street="river">River</button>
+  </div>
+  <div class="slots-row" id="community-slots"></div>
+  <div id="preflop-msg" style="color:#8899aa;font-size:0.85rem;">No community cards yet.</div>
+</div>
+
+<!-- Card Picker Grid -->
+<div class="panel">
+  <div class="panel-title">Card Picker</div>
+  <div class="picker-hint" id="picker-hint">Tap a slot above to select it, then pick a card.</div>
+  <div id="picker-grid"></div>
+</div>
+
+<!-- Game Info -->
+<div class="panel">
+  <div class="panel-title">Game Info</div>
+  <div class="field-row">
+    <div class="field">
+      <label>PLAYERS STILL IN HAND</label>
+      <input type="number" id="num-players" min="2" max="9" value="6" />
+    </div>
+    <div class="field">
+      <label>TOTAL POT incl. bets ($)</label>
+      <input type="number" id="pot-size" min="0" value="100" />
+    </div>
+    <div class="field">
+      <label>AMOUNT TO CALL ($)</label>
+      <input type="number" id="call-amount" min="0" value="0" />
+    </div>
+  </div>
+</div>
+
+<button id="submit">Calculate EV</button>
+<div id="error"></div>
+
+<!-- Results -->
+<div id="results">
+  <div class="result-panel">
+    <div class="result-header">
+      <span class="street-badge" id="res-street"></span>
+      <span class="hand-label" id="res-hand"></span>
+    </div>
+    <div class="equity-bars">
+      <div class="bar-label"><span>Win</span><span id="lbl-win">—</span></div>
+      <div class="bar-track"><div class="bar-fill-win" id="bar-win" style="width:0"></div></div>
+      <div class="bar-label"><span>Tie</span><span id="lbl-tie">—</span></div>
+      <div class="bar-track"><div class="bar-fill-tie" id="bar-tie" style="width:0"></div></div>
+      <div class="bar-label"><span>Lose</span><span id="lbl-lose">—</span></div>
+      <div class="bar-track"><div class="bar-fill-lose" id="bar-lose" style="width:0"></div></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box win"><div class="stat-value" id="stat-win">—</div><div class="stat-label">WIN %</div></div>
+      <div class="stat-box tie"><div class="stat-value" id="stat-equity">—</div><div class="stat-label">EQUITY %</div></div>
+      <div class="stat-box lose"><div class="stat-value" id="stat-lose">—</div><div class="stat-label">LOSE %</div></div>
+    </div>
+    <div class="rec-panel">
+      <div class="rec-action" id="rec-action">—</div>
+      <div class="rec-details">
+        <div class="rec-detail">Bet size: <strong id="rec-bet">—</strong></div>
+        <div class="rec-detail">Call EV: <strong id="rec-ev">—</strong></div>
+        <div class="rec-detail">Pot odds needed: <strong id="rec-potodds">—</strong></div>
+      </div>
+      <div class="rec-reason" id="rec-reason">—</div>
+    </div>
+
+    <!-- Winning hand breakdown -->
+    <div style="margin-top:1.2rem;">
+      <div style="font-size:0.75rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#f5c842;margin-bottom:0.8rem;">
+        Winning Hand Breakdown
+      </div>
+      <div style="font-size:0.75rem;color:#8899aa;margin-bottom:0.7rem;">% of winning scenarios by hand type</div>
+      <div id="hand-breakdown"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Constants ────────────────────────────────────────────────────────────
+  const RANKS    = ['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
+  const SUITS    = ['h','d','c','s'];
+  const SUIT_SYM = { h:'♥', d:'♦', c:'♣', s:'♠' };
+  const SUIT_CLS = { h:'card-red', d:'card-red', c:'card-black', s:'card-black' };
+  const RANK_DISPLAY = r => r === 'T' ? '10' : r;
+
+  // ── State ────────────────────────────────────────────────────────────────
+  const cardState = {
+    card1: null, card2: null,
+    flop1: null, flop2: null, flop3: null,
+    turn1: null, river1: null,
+  };
+  let activeSlot = null;
+  let currentStreet = 'preflop';
+
+  const slotOrder = ['card1','card2','flop1','flop2','flop3','turn1','river1'];
+
+  const communityDefs = [
+    { id:'flop1',  label:'Flop 1', streets:['flop','turn','river'] },
+    { id:'flop2',  label:'Flop 2', streets:['flop','turn','river'] },
+    { id:'flop3',  label:'Flop 3', streets:['flop','turn','river'] },
+    { id:'turn1',  label:'Turn',   streets:['turn','river'] },
+    { id:'river1', label:'River',  streets:['river'] },
+  ];
+
+  // ── Build a card slot element ────────────────────────────────────────────
+  function buildSlotEl(id, label) {
+    const wrap = document.createElement('div');
+    wrap.className = 'slot-wrap';
+    wrap.innerHTML = `<span class="slot-label">${label}</span>`;
+
+    const slot = document.createElement('div');
+    slot.className = 'card-slot';
+    slot.id = `slot-${id}`;
+    slot.innerHTML = `<span class="slot-empty-icon">+</span>`;
+    slot.addEventListener('click', () => onSlotClick(id));
+
+    wrap.appendChild(slot);
+    return wrap;
+  }
+
+  function renderSlot(id) {
+    const el = document.getElementById(`slot-${id}`);
+    if (!el) return;
+    const card = cardState[id];
+    el.classList.toggle('filled', !!card);
+    el.classList.toggle('active', activeSlot === id);
+    if (card) {
+      const rank = card.slice(0, -1);
+      const suit = card.slice(-1);
+      const cls  = SUIT_CLS[suit];
+      el.innerHTML = `
+        <span class="slot-rank ${cls}">${RANK_DISPLAY(rank)}</span>
+        <span class="slot-suit ${cls}">${SUIT_SYM[suit]}</span>`;
+    } else {
+      el.innerHTML = `<span class="slot-empty-icon">+</span>`;
+    }
+  }
+
+  function onSlotClick(id) {
+    // Clicking a filled slot clears it; clicking any slot makes it active
+    if (cardState[id] && activeSlot !== id) {
+      // Just activate without clearing — let user pick a replacement
+    }
+    activeSlot = id;
+    renderAllSlots();
+    updatePickerHint();
+    updatePickerUsed();
+  }
+
+  function renderAllSlots() {
+    Object.keys(cardState).forEach(id => renderSlot(id));
+  }
+
+  // ── Build hole-card slots ────────────────────────────────────────────────
+  const holeContainer = document.getElementById('hole-slots');
+  [['card1','Card 1'],['card2','Card 2']].forEach(([id, label]) => {
+    holeContainer.appendChild(buildSlotEl(id, label));
+  });
+
+  // ── Build community slots ────────────────────────────────────────────────
+  const communityContainer = document.getElementById('community-slots');
+  communityDefs.forEach(def => {
+    const wrap = buildSlotEl(def.id, def.label);
+    wrap.dataset.streets = def.streets.join(',');
+    wrap.style.display = 'none';
+    communityContainer.appendChild(wrap);
+  });
+
+  function updateCommunityVisibility() {
+    const hasCards = currentStreet !== 'preflop';
+    communityContainer.style.display = hasCards ? 'flex' : 'none';
+    communityContainer.style.gap = '0.6rem';
+    communityContainer.style.flexWrap = 'wrap';
+    document.getElementById('preflop-msg').style.display = hasCards ? 'none' : '';
+    communityDefs.forEach(def => {
+      const wrap = communityContainer.querySelector(`[data-streets]`);
+    });
+    // show/hide each slot wrap
+    communityContainer.querySelectorAll('.slot-wrap').forEach(wrap => {
+      const streets = (wrap.dataset.streets || '').split(',');
+      wrap.style.display = streets.includes(currentStreet) ? '' : 'none';
+    });
+  }
+
+  // ── Street tabs ──────────────────────────────────────────────────────────
+  document.querySelectorAll('.street-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.street-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentStreet = tab.dataset.street;
+      updateCommunityVisibility();
+      updatePickerHint();
+    });
+  });
+
+  // ── Build 52-card picker grid ────────────────────────────────────────────
+  const pickerGrid = document.getElementById('picker-grid');
+
+  SUITS.forEach(suit => {
+    const row = document.createElement('div');
+    row.className = 'picker-suit-row';
+
+    const lbl = document.createElement('div');
+    lbl.className = `picker-suit-label ${SUIT_CLS[suit]}`;
+    lbl.textContent = SUIT_SYM[suit];
+    row.appendChild(lbl);
+
+    const cards = document.createElement('div');
+    cards.className = 'picker-cards-row';
+
+    RANKS.forEach(rank => {
+      const card = document.createElement('div');
+      card.className = 'pick-card';
+      card.id = `pick-${rank}${suit}`;
+      card.dataset.card = rank + suit;
+      card.innerHTML = `
+        <span class="pick-rank ${SUIT_CLS[suit]}">${RANK_DISPLAY(rank)}</span>
+        <span class="pick-suit ${SUIT_CLS[suit]}">${SUIT_SYM[suit]}</span>`;
+      card.addEventListener('click', () => onPickCard(rank + suit));
+      cards.appendChild(card);
+    });
+
+    row.appendChild(cards);
+    pickerGrid.appendChild(row);
+  });
+
+  function updatePickerUsed() {
+    const usedCards = new Set(
+      Object.entries(cardState)
+        .filter(([id, c]) => c && id !== activeSlot)
+        .map(([, c]) => c)
+    );
+    document.querySelectorAll('.pick-card').forEach(el => {
+      el.classList.toggle('used', usedCards.has(el.dataset.card));
+    });
+  }
+
+  function updatePickerHint() {
+    const hint = document.getElementById('picker-hint');
+    if (!activeSlot) {
+      hint.innerHTML = 'Tap a slot above to select it, then pick a card.';
+      return;
+    }
+    const slotEl = document.getElementById(`slot-${activeSlot}`);
+    const label  = slotEl?.closest('.slot-wrap')?.querySelector('.slot-label')?.textContent || activeSlot;
+    hint.innerHTML = `Picking for: <span>${label}</span> — tap a card below.`;
+  }
+
+  function onPickCard(card) {
+    if (!activeSlot) return;
+    cardState[activeSlot] = card;
+    renderSlot(activeSlot);
+
+    // Auto-advance to next empty visible slot
+    const visibleSlots = getVisibleSlotIds();
+    const idx = visibleSlots.indexOf(activeSlot);
+    let nextSlot = null;
+    for (let i = idx + 1; i < visibleSlots.length; i++) {
+      if (!cardState[visibleSlots[i]]) { nextSlot = visibleSlots[i]; break; }
+    }
+    activeSlot = nextSlot;
+    renderAllSlots();
+    updatePickerHint();
+    updatePickerUsed();
+  }
+
+  function getVisibleSlotIds() {
+    const ids = ['card1','card2'];
+    communityDefs.forEach(def => {
+      if (def.streets.includes(currentStreet)) ids.push(def.id);
+    });
+    return ids;
+  }
+
+  // ── Remove All ───────────────────────────────────────────────────────────
+  document.getElementById('clear-all').addEventListener('click', () => {
+    Object.keys(cardState).forEach(id => cardState[id] = null);
+    activeSlot = 'card1';
+    renderAllSlots();
+    updatePickerHint();
+    updatePickerUsed();
+  });
+
+  // ── Initialise ───────────────────────────────────────────────────────────
+  updateCommunityVisibility();
+  activeSlot = 'card1';
+  renderAllSlots();
+  updatePickerHint();
+  updatePickerUsed();
+
+  // ── Read card values ─────────────────────────────────────────────────────
+  function getCard(id) { return cardState[id] || null; }
+
+  function getCommunityCards() {
+    if (currentStreet === 'preflop') return [];
+    return communityDefs
+      .filter(def => def.streets.includes(currentStreet))
+      .map(def => cardState[def.id])
+      .filter(Boolean);
+  }
+
+  // ── Action class for colouring ───────────────────────────────────────────
+  function actionClass(action) {
+    const a = action.toLowerCase();
+    if (a.includes('raise')) return 'action-raise';
+    if (a.includes('bet'))   return 'action-bet';
+    if (a.includes('call'))  return 'action-call';
+    if (a.includes('check')) return 'action-check';
+    return 'action-fold';
+  }
+
+  // ── Submit ───────────────────────────────────────────────────────────────
+  document.getElementById('submit').addEventListener('click', async () => {
+    const btn      = document.getElementById('submit');
+    const errDiv   = document.getElementById('error');
+    const results  = document.getElementById('results');
+
+    errDiv.style.display = 'none';
+
+    const hole = [getCard('card1'), getCard('card2')];
+    if (hole.some(c => !c)) {
+      errDiv.textContent = 'Please select both hole cards.';
+      errDiv.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Calculating…';
+
+    const payload = {
+      hole_cards: hole,
+      community_cards: getCommunityCards(),
+      num_players: parseInt(document.getElementById('num-players').value),
+      pot_size: parseFloat(document.getElementById('pot-size').value) || 0,
+      call_amount: parseFloat(document.getElementById('call-amount').value) || 0,
+      num_simulations: 10000,
+    };
+
+    try {
+      const res  = await fetch('/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || 'Server error');
+
+      const sim = data.simulation;
+      const rec = data.recommendation;
+
+      document.getElementById('res-street').textContent = data.street;
+      document.getElementById('res-hand').textContent   = sim.current_hand;
+
+      document.getElementById('lbl-win').textContent   = sim.win_pct + '%';
+      document.getElementById('lbl-tie').textContent   = sim.tie_pct + '%';
+      document.getElementById('lbl-lose').textContent  = sim.loss_pct + '%';
+      document.getElementById('bar-win').style.width   = sim.win_pct + '%';
+      document.getElementById('bar-tie').style.width   = sim.tie_pct + '%';
+      document.getElementById('bar-lose').style.width  = sim.loss_pct + '%';
+
+      document.getElementById('stat-win').textContent    = sim.win_pct + '%';
+      document.getElementById('stat-equity').textContent = sim.equity + '%';
+      document.getElementById('stat-lose').textContent   = sim.loss_pct + '%';
+
+      const actionEl = document.getElementById('rec-action');
+      actionEl.textContent = rec.action;
+      actionEl.className   = 'rec-action ' + actionClass(rec.action);
+
+      document.getElementById('rec-bet').textContent =
+        rec.bet_size > 0 ? `$${rec.bet_size.toFixed(2)} (${rec.bet_pct}% of pot)` : '—';
+      document.getElementById('rec-ev').textContent =
+        payload.call_amount > 0
+          ? (rec.ev_call >= 0 ? '+' : '') + `$${rec.ev_call.toFixed(2)}`
+          : '—';
+      document.getElementById('rec-potodds').textContent =
+        payload.call_amount > 0 ? rec.pot_odds_required + '%' : '—';
+      document.getElementById('rec-reason').textContent = rec.reason;
+
+      // Hand breakdown chart
+      const breakdown = sim.win_breakdown || {};
+      const handOrder = [
+        'Straight Flush','Four of a Kind','Full House','Flush',
+        'Straight','Three of a Kind','Two Pair','One Pair','High Card'
+      ];
+      const breakdownEl = document.getElementById('hand-breakdown');
+      breakdownEl.innerHTML = '';
+      // Bar colour shifts from green (strong) to blue (weak)
+      const barColors = {
+        'Straight Flush':'#f5c842','Four of a Kind':'#f5c842','Full House':'#66ccff',
+        'Flush':'#66ccff','Straight':'#66ccff','Three of a Kind':'#4caf82',
+        'Two Pair':'#4caf82','One Pair':'#6aabcc','High Card':'#8899aa'
+      };
+      handOrder.forEach(name => {
+        const pct = breakdown[name];
+        if (!pct) return;
+        const color = barColors[name] || '#4caf82';
+        const row = document.createElement('div');
+        row.className = 'breakdown-row';
+        row.innerHTML = `
+          <div class="breakdown-name">${name}</div>
+          <div class="breakdown-track"><div class="breakdown-fill" style="width:0;background:${color}" data-pct="${pct}"></div></div>
+          <div class="breakdown-pct">${pct}%</div>`;
+        breakdownEl.appendChild(row);
+      });
+      // Animate bars after paint
+      requestAnimationFrame(() => {
+        breakdownEl.querySelectorAll('.breakdown-fill').forEach(el => {
+          el.style.width = el.dataset.pct + '%';
+        });
+      });
+
+      results.style.display = 'block';
+      results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+      errDiv.textContent = err.message;
+      errDiv.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Calculate EV';
+    }
+  });
+</script>
+</body>
+</html>
